@@ -1,11 +1,7 @@
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { PodcastChunk } from "@/types";
-import {
-  IconExternalLink,
-  IconSearch,
-  IconSend,
-} from "@tabler/icons-react";
+import { IconExternalLink, IconSearch, IconSend } from "@tabler/icons-react";
 import endent from "endent"; // To create multilines strings with consistent indentation
 import Head from "next/head"; // To manage the 'head' of the React document
 import { KeyboardEvent, useEffect, useRef, useState } from "react"; // Import React hooks
@@ -26,7 +22,6 @@ export default function Home() {
   const [mode, setMode] = useState<"search" | "chat">("chat");
   const [matchCount, setMatchCount] = useState<number>(10);
   const [apiKey, setApiKey] = useState<string>("");
-
 
   /*
     Define function to handle searching, which fetches search results from the API
@@ -354,7 +349,10 @@ export default function Home() {
 
                 <button className="flex items-center justify-center absolute rotate-45	rounded-full w-10 h-10 hover:cursor-pointer sm:right-3 sm:top-3">
                   <IconSend
-                    onClick={mode === "search" ? handleSearch : handleAnswer}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      mode === "search" ? handleSearch() : handleAnswer();
+                    }}
                   />
                 </button>
               </div>
@@ -472,7 +470,9 @@ export default function Home() {
                       className="flex cursor-pointer items-center space-x-2 rounded-lg px-3 py-1 text-sm border border-zinc-600 center hover:bg-zinc-600 hover:text-white"
                       onClick={() => {
                         setQuery("Why is VC funding not always a good idea?");
-                        handleAnswer("Why is VC funding not always a good idea?");
+                        handleAnswer(
+                          "Why is VC funding not always a good idea?"
+                        );
                       }}
                     >
                       Why is VC funding not always a good idea?
