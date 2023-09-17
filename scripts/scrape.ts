@@ -39,7 +39,8 @@ const CHUNK_SIZE = 200;
 
 const readCSV = async (filePath: string): Promise<{ url: string }[]> => {
   // get the list of URLs from the CSV file "podcast_links.csv"
-  let urls = [];
+  let urls: { url: string }[] = [];
+  
   return new Promise((resolve, reject) => {
     fs.createReadStream(filePath)
       .pipe(csv())
@@ -65,7 +66,17 @@ const getPodcast = async (linkObj: { url: string }): Promise<Podcast> => {
     },
   });
 
-  if (!html) return null;
+  if (!html) {
+    return {
+      title: "",
+      url: "",
+      date: "",
+      content: "",
+      length: 0,
+      tokens: 0,
+      chunks: [],
+    };
+  }
 
   const $ = cheerio.load(html.data);
 

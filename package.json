@@ -1,5 +1,5 @@
 {
-  "name": "paul-graham-gpt",
+  "name": "rob-gpt",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "scrape": "tsx scripts/scrape.ts",
-    "embed": "tsx scripts/embed.ts"
+    "embed": "tsx scripts/embed.ts",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@next/font": "^13.2.3",
