@@ -21,7 +21,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [mode, setMode] = useState<"search" | "chat">("chat");
   const [matchCount, setMatchCount] = useState<number>(10);
-  const [apiKey, setApiKey] = useState<string>(process.env.NEXT_PUBLIC_OPENAI_API_KEY! || "");
+  const [apiKey, setApiKey] = useState<string>("");
 
 
   /*
@@ -84,10 +84,6 @@ export default function Home() {
   // Similar to handleSearch, but also fetches an answer based on the search results
   const handleAnswer = async (button_query?: string) => {
     // Error handling: check for API key and query
-    if (!apiKey) {
-      alert("Please enter an API key.");
-      return;
-    }
 
     query = button_query || query;
 
@@ -334,7 +330,7 @@ export default function Home() {
               </div>
             )}
 
-            {apiKey.length === 51 ? (
+          
               <div className="relative w-full mt-4">
                 <IconSearch className="absolute top-3 w-10 left-1 h-6 rounded-full opacity-50 sm:left-3 sm:top-4 sm:h-8" />
 
@@ -357,19 +353,7 @@ export default function Home() {
                   />
                 </button>
               </div>
-            ) : (
-              <div className="text-center font-bold text-3xl mt-7">
-                {/* Please enter your
-                <a
-                  className="mx-2 underline hover:opacity-50"
-                  href="https://openai.com/product"
-                >
-                  OpenAI API key
-                </a>
-                in settings. */}
-                Could not find an API key.
-              </div>
-            )}
+           
 
             {loading ? (
               <div className="mt-6 w-full">
