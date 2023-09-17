@@ -21,7 +21,8 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [mode, setMode] = useState<"search" | "chat">("chat");
   const [matchCount, setMatchCount] = useState<number>(10);
-  const [apiKey, setApiKey] = useState<string>("");
+  const [apiKey, setApiKey] = useState<string>(process.env.OPENAI_API_KEY! || "");
+
 
   /*
     Define function to handle searching, which fetches search results from the API
