@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "@/utils";
-import * as process from "process";
 
 export const config = {
   runtime: "edge",

@@ -1,5 +1,4 @@
 import { OpenAIStream, Followupquestions } from "@/utils";
-import process from "process";
 
 export const config = {
   runtime: "edge",
