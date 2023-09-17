@@ -12,14 +12,14 @@ interface Chunk {
 
 const handler = async (req: Request): Promise<Response> => {
   try {
-    const { query, apiKey, matches } = (await req.json()) as {
+    let { query, apiKey, matches } = (await req.json()) as {
       query: string;
       apiKey: string;
       matches: number;
     };
 
     const input = query.replace(/\n/g, " ");
-    const apiKe = process.env.OPENAI_API_KEY!;
+    apiKey = process.env.OPENAI_API_KEY!;
 
     // const completion_res = await fetch("https://api.openai.com/v1/chat/completions", {
     //   headers: {
@@ -52,7 +52,7 @@ const handler = async (req: Request): Promise<Response> => {
     const res = await fetch("https://api.openai.com/v1/embeddings", {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKe}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       method: "POST",
       body: JSON.stringify({

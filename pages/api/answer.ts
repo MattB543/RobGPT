@@ -12,14 +12,12 @@ const handler = async (req: Request): Promise<Response> => {
       apiKey: string;
       type: string;
     };
-    const apiKe = process.env.OPENAI_API_KEY!;
+    let apiKe = process.env.OPENAI_API_KEY!;
 
     let stream;
 
     if (type === "answer") {
       stream = await OpenAIStream(prompt, apiKe);
-    } else if (type === "followup") {
-      stream = await Followupquestions(prompt, apiKe);
     }
 
     return new Response(stream);
