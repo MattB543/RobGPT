@@ -21,7 +21,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [mode, setMode] = useState<"search" | "chat">("chat");
   const [matchCount, setMatchCount] = useState<number>(10);
-  const [apiKey, setApiKey] = useState<string>(process.env.OPENAI_API_KEY! || "");
+  const [apiKey, setApiKey] = useState<string>(process.env.NEXT_PUBLIC_OPENAI_API_KEY! || "");
 
 
   /*
