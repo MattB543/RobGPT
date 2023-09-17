@@ -5,6 +5,11 @@ export const config = {
   runtime: "edge",
 };
 
+interface Chunk {
+  id: number;
+  title: string;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   try {
     const { query, apiKey, matches } = (await req.json()) as {
@@ -71,17 +76,17 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Extract IDs and podcast_titles from the main matching chunks
-    const idTitlePairs = chunks.map((chunk) => ({
+    const idTitlePairs = chunks.map((chunk: { id: any; podcast_title: any; }) => ({
       id: chunk.id,
       title: chunk.podcast_title,
     }));
 
     // Create lists of IDs and titles for the preceding and succeeding chunks
-    const prevPairs = idTitlePairs.map((pair) => ({
+    const prevPairs = idTitlePairs.map((pair: { id: number; title: any; }) => ({
       id: pair.id - 1,
       title: pair.title,
     }));
-    const nextPairs = idTitlePairs.map((pair) => ({
+    const nextPairs = idTitlePairs.map((pair: { id: number; title: any; }) => ({
       id: pair.id + 1,
       title: pair.title,
     }));
@@ -92,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
       .select("*")
       .in(
         "id",
-        prevPairs.map((pair) => pair.id)
+        prevPairs.map((pair: { id: any; }) => pair.id)
       );
 
     if (prevError) {
@@ -106,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
       .select("*")
       .in(
         "id",
-        nextPairs.map((pair) => pair.id)
+        nextPairs.map((pair: { id: any; }) => pair.id)
       );
 
     if (nextError) {
@@ -117,12 +122,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Filter out preceding and succeeding chunks that don't share the same podcast_title
     const filteredPrevChunks = prevChunks.filter((chunk) =>
       prevPairs.some(
-        (pair) => pair.id === chunk.id && pair.title === chunk.podcast_title
+        (pair: { id: any; title: any; }) => pair.id === chunk.id && pair.title === chunk.podcast_title
       )
     );
     const filteredNextChunks = nextChunks.filter((chunk) =>
       nextPairs.some(
-        (pair) => pair.id === chunk.id && pair.title === chunk.podcast_title
+        (pair: { id: any; title: any; }) => pair.id === chunk.id && pair.title === chunk.podcast_title
       )
     );
 
