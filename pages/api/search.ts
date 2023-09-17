@@ -20,34 +20,6 @@ const handler = async (req: Request): Promise<Response> => {
     const input = query.replace(/\n/g, " ");
     apiKey = process.env.OPENAI_API_KEY!;
 
-    // const completion_res = await fetch("https://api.openai.com/v1/chat/completions", {
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${apiKe}`
-    //   },
-    //   method: "POST",
-    //   body: JSON.stringify({
-    //     model: "gpt-4",
-    //     messages: [
-    //       {
-    //         role: "system",
-    //         content: "You are Rob Walling from the Startups For the Rest of Us podcast answering questions."
-    //       },
-    //       {
-    //         role: "user",
-    //         content: `Response to the below in one sentence as if you were Rob Walling on the Startups For the Rest of Us podcast. Do not repeat the question or refer to the question directly. Your job is to mimic a podcast transcript in which this question would be answered naturally.\n\n${input}`
-    //       }
-    //     ],
-    //     max_tokens: 100,
-    //     temperature: 0.25,
-    //     stream: false
-    //   })
-    // });
-
-    // let completion_json = await completion_res.json();
-    // let completion = completion_json.choices[0].message.content;
-    // completion = completion.replace(/\n/g, " ");
-
     const res = await fetch("https://api.openai.com/v1/embeddings", {
       headers: {
         "Content-Type": "application/json",
