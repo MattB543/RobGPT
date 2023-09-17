@@ -22,10 +22,9 @@ create or replace function pg_search (
 )
 returns table (
   id bigint,
-  essay_title text,
-  essay_url text,
-  essay_date text,
-  essay_thanks text,
+  podcast_title text,
+  podcast_url text,
+  podcast_date text,
   content text,
   content_length bigint,
   content_tokens bigint,
@@ -40,7 +39,6 @@ begin
     pg.essay_title,
     pg.essay_url,
     pg.essay_date,
-    pg.essay_thanks,
     pg.content,
     pg.content_length,
     pg.content_tokens,
@@ -55,4 +53,4 @@ $$;
 -- RUN 4th
 create index on pg 
 using ivfflat (embedding vector_cosine_ops)
-with (lists = 100);
+with (lists = 300);

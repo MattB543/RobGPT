@@ -5,21 +5,16 @@ export const Navbar: FC = () => {
   return (
     <div className="flex h-[60px] border-b border-gray-300 py-2 px-8 items-center justify-between">
       <div className="font-bold text-2xl flex items-center">
-        <a
-          className="hover:opacity-50"
-          href="https://hubermangpt.vercel.app"
-        >
-          Huberman GPT
-        </a>
+         Rob Walling
       </div>
       <div>
         <a
           className="flex items-center hover:opacity-50"
-          href="https://hubermanlab.com/"
+          href="https://www.startupsfortherestofus.com/"
           target="_blank"
           rel="noreferrer"
         >
-          <div className="hidden sm:flex">HubermanLab.com</div>
+          <div className="hidden sm:flex">Startups For the Rest of Us</div>
 
           <IconExternalLink
             className="ml-1"

@@ -10,7 +10,6 @@ export const Answer: React.FC<AnswerProps> = ({ text }) => {
 
   useEffect(() => {
     setWords(text.split(" "));
-    console.log(text);
   }, [text]);
 
   return (

@@ -1,114 +1,112 @@
-import { PGChunk, PGEssay, PGJSON } from "@/types";
+import { AxiosResponse } from "axios";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import fs from "fs";
+import csv from "csv-parser"; // Add a CSV parser for reading the list of URLs
 import { encode } from "gpt-3-encoder";
 
-const BASE_URL = "http://www.paulgraham.com/";
+// Define new TypeScript types for Podcast
+interface PodcastChunk {
+  podcast_title: string;
+  podcast_url: string;
+  podcast_date: string;
+  content: string;
+  content_length: number;
+  content_tokens: number;
+  embedding: any[];
+}
+
+interface Podcast {
+  title: string;
+  url: string;
+  date: string;
+  content: string;
+  length: number;
+  tokens: number;
+  chunks: PodcastChunk[];
+}
+
+interface PodcastJSON {
+  current_date: string;
+  author: string;
+  url: string;
+  length: number;
+  tokens: number;
+  podcasts: Podcast[];
+}
+
 const CHUNK_SIZE = 200;
 
-const getLinks = async () => {
-  const html = await axios.get(`${BASE_URL}articles.html`);
-  const $ = cheerio.load(html.data);
-  const tables = $("table");
-
-  const linksArr: { url: string; title: string }[] = [];
-
-  tables.each((i, table) => {
-    if (i === 2) {
-      const links = $(table).find("a");
-      links.each((i, link) => {
-        const url = $(link).attr("href");
-        const title = $(link).text();
-
-        if (url && url.endsWith(".html")) {
-          const linkObj = {
-            url,
-            title
-          };
-
-          linksArr.push(linkObj);
-        }
-      });
-    }
+const readCSV = async (filePath: string): Promise<{ url: string }[]> => {
+  // get the list of URLs from the CSV file "podcast_links.csv"
+  let urls = [];
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on("data", (data) => urls.push(data))
+      .on("end", () => {
+        resolve(urls);
+      })
+      .on("error", (error) => reject(error));
   });
-
-  return linksArr;
 };
 
-const getEssay = async (linkObj: { url: string; title: string }) => {
-  const { title, url } = linkObj;
+const getPodcast = async (linkObj: { url: string }): Promise<Podcast> => {
+  const { url } = linkObj;
 
-  let essay: PGEssay = {
-    title: "",
-    url: "",
-    date: "",
-    thanks: "",
-    content: "",
-    length: 0,
-    tokens: 0,
-    chunks: []
+  if (!url) {
+    throw new Error("URL is undefined"); // Throw an error if URL is undefined
+  }
+
+  const html: AxiosResponse = await axios.get(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537",
+    },
+  });
+
+  if (!html) return null;
+
+  const $ = cheerio.load(html.data);
+
+  const title = $(".entry-title").text() || "";
+  const date = $("time.entry-time").text() || "";
+  let content = $("div.ssp-transcript-content").text();
+
+  if (!content) {
+    const entryContentFirst = $(".entry-content-first");
+    content = "";
+
+    // Step 3: Find the <p> that contains "Transcript" within the selected <div>
+    entryContentFirst.find("p").each(function (index, element) {
+      if ($(this).text().includes("Transcript")) {
+        // Step 4: Once the <p> with "Transcript" is found, start iterating through all following siblings until a <div> is hit
+        let current = $(this);
+        while (current.length > 0 && current[0].tagName !== "div") {
+          content += current.text() + "\n";
+          current = current.next();
+        }
+        return false; // Exit the loop once we've found and processed the "Transcript" section
+      }
+    });
+  }
+
+  let cleanedContent = content.replace(/\s+/g, " ").trim();
+  cleanedContent = content.replace(/\[[^\]]*\]/g, "");
+
+  return {
+    title,
+    url,
+    date,
+    content: cleanedContent,
+    length: cleanedContent.length,
+    tokens: encode(cleanedContent).length,
+    chunks: [],
   };
-
-  const fullLink = BASE_URL + url;
-  const html = await axios.get(fullLink);
-  const $ = cheerio.load(html.data);
-  const tables = $("table");
-
-  tables.each((i, table) => {
-    if (i === 1) {
-      const text = $(table).text();
-
-      let cleanedText = text.replace(/\s+/g, " ");
-      cleanedText = cleanedText.replace(/\.([a-zA-Z])/g, ". $1");
-
-      const date = cleanedText.match(/([A-Z][a-z]+ [0-9]{4})/);
-      let dateStr = "";
-      let textWithoutDate = "";
-
-      if (date) {
-        dateStr = date[0];
-        textWithoutDate = cleanedText.replace(date[0], "");
-      }
-
-      let essayText = textWithoutDate.replace(/\n/g, " ");
-      let thanksTo = "";
-
-      const split = essayText.split(". ").filter((s) => s);
-      const lastSentence = split[split.length - 1];
-
-      if (lastSentence && lastSentence.includes("Thanks to")) {
-        const thanksToSplit = lastSentence.split("Thanks to");
-
-        if (thanksToSplit[1].trim()[thanksToSplit[1].trim().length - 1] === ".") {
-          thanksTo = "Thanks to " + thanksToSplit[1].trim();
-        } else {
-          thanksTo = "Thanks to " + thanksToSplit[1].trim() + ".";
-        }
-
-        essayText = essayText.replace(thanksTo, "");
-      }
-
-      const trimmedContent = essayText.trim();
-
-      essay = {
-        title,
-        url: fullLink,
-        date: dateStr,
-        thanks: thanksTo.trim(),
-        content: trimmedContent,
-        length: trimmedContent.length,
-        tokens: encode(trimmedContent).length,
-        chunks: []
-      };
-    }
-  });
-
-  return essay;
 };
 
-const chunkEssay = async (essay: PGEssay) => {
-  const { title, url, date, thanks, content, ...chunklessSection } = essay;
+const chunkPodcast = async (podcast: Podcast): Promise<Podcast> => {
+  const { title, url, date, content } = podcast;
 
   let essayTextChunks = [];
 
@@ -126,10 +124,12 @@ const chunkEssay = async (essay: PGEssay) => {
         chunkText = "";
       }
 
-      if (sentence[sentence.length - 1].match(/[a-z0-9]/i)) {
-        chunkText += sentence + ". ";
-      } else {
-        chunkText += sentence + " ";
+      if (sentence && sentence.length > 0) {
+        if (sentence[sentence.length - 1].match(/[a-z0-9]/i)) {
+          chunkText += sentence + ". ";
+        } else {
+          chunkText += sentence + " ";
+        }
       }
     }
 
@@ -141,15 +141,14 @@ const chunkEssay = async (essay: PGEssay) => {
   const essayChunks = essayTextChunks.map((text) => {
     const trimmedText = text.trim();
 
-    const chunk: PGChunk = {
-      essay_title: title,
-      essay_url: url,
-      essay_date: date,
-      essay_thanks: thanks,
+    const chunk: PodcastChunk = {
+      podcast_title: title,
+      podcast_url: url,
+      podcast_date: date,
       content: trimmedText,
       content_length: trimmedText.length,
       content_tokens: encode(trimmedText).length,
-      embedding: []
+      embedding: [],
     };
 
     return chunk;
@@ -170,33 +169,55 @@ const chunkEssay = async (essay: PGEssay) => {
     }
   }
 
-  const chunkedSection: PGEssay = {
-    ...essay,
-    chunks: essayChunks
+  const chunkedSection: Podcast = {
+    ...podcast,
+    chunks: essayChunks,
   };
 
   return chunkedSection;
 };
 
 (async () => {
-  const links = await getLinks();
+  const filePath = "podcast_links.csv";
+  const links = await readCSV(filePath);
 
-  let essays = [];
+  console.log(`Found ${links.length} links`);
 
-  for (let i = 0; i < links.length; i++) {
-    const essay = await getEssay(links[i]);
-    const chunkedEssay = await chunkEssay(essay);
-    essays.push(chunkedEssay);
+  let podcasts: Podcast[] = [];
+
+  try {
+    for (let i = 0; i < links.length; i++) {
+      const link = links[i];
+      if (i > 0) await new Promise((resolve) => setTimeout(resolve, 3000));
+      console.log(`Getting podcast for ${link.url}`);
+      const podcast = await getPodcast(link);
+      const chunkedPodcast = await chunkPodcast(podcast);
+      podcasts.push(chunkedPodcast);
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
+
+    const json: PodcastJSON = {
+      current_date: "2023-09-11", // You should probably use a dynamic date here
+      author: "Rob Walling",
+      url: "https://www.startupsfortherestofus.com/",
+      length: podcasts.reduce((acc, podcast) => acc + podcast.length, 0),
+      tokens: podcasts.reduce((acc, podcast) => acc + podcast.tokens, 0),
+      podcasts,
+    };
+
+    fs.writeFileSync("podcasts_error.json", JSON.stringify(json));
+    process.exit(1); // Exit with an error code
   }
 
-  const json: PGJSON = {
-    current_date: "2023-03-01",
-    author: "Paul Graham",
-    url: "http://www.paulgraham.com/articles.html",
-    length: essays.reduce((acc, essay) => acc + essay.length, 0),
-    tokens: essays.reduce((acc, essay) => acc + essay.tokens, 0),
-    essays
+  const json: PodcastJSON = {
+    current_date: "2023-09-11",
+    author: "Rob Walling",
+    url: "https://www.startupsfortherestofus.com/",
+    length: podcasts.reduce((acc, podcast) => acc + podcast.length, 0),
+    tokens: podcasts.reduce((acc, podcast) => acc + podcast.tokens, 0),
+    podcasts,
   };
 
-  fs.writeFileSync("scripts/pg.json", JSON.stringify(json));
+  fs.writeFileSync("podcasts.json", JSON.stringify(json));
 })();
